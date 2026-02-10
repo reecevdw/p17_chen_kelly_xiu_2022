@@ -4,7 +4,7 @@ chartbook_format_version = "0.0.2"
 
 [site]
 title = "p17_chen_kelly_xiu_2022"
-author = "Andrew Moukabary"
+author = "Reece VanDeWeghe and Andrew Moukabary"
 copyright = "2025"
 logo_path = ""
 favicon_path = ""
@@ -13,11 +13,11 @@ favicon_path = ""
 id = "P1"
 pipeline_name = "p17_chen_kelly_xiu_2022"
 pipeline_description = "A data science project"
-lead_pipeline_developer = "Andrew Moukabary"
+lead_pipeline_developer = "Reece VanDeWeghe"
 contributors = ["Andrew Moukabary"]
 software_modules_command = "module load anaconda3/3.11.4 TeXLive/2023"
 runs_on_grid_or_windows_or_other = "Windows/Linux/MacOS"
-git_repo_URL = ""
+git_repo_URL = "https://github.com/reecevdw/p17_chen_kelly_xiu_2022"
 README_file_path = "./README.md"
 
 [notebooks]

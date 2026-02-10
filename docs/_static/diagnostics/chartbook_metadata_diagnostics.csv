@@ -1,5 +1,5 @@
 Name,Metadata Complete,Object Type,Identifier,Pipeline,Missing Fields,Page Link
-p17_chen_kelly_xiu_2022,False,pipeline,P1,P1,"build_commands, os_compatibility, git_repo_URL",../index.html
+p17_chen_kelly_xiu_2022,False,pipeline,P1,P1,"build_commands, os_compatibility",../index.html
 CRSP Daily Stock Data (Russell 1000 Proxy),False,dataframe,crsp_daily,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/crsp_daily.html
 RavenPack Dow Jones & PR Equities News,False,dataframe,ravenpack_djpr,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/ravenpack_djpr.html
 RavenPack × CRSP Merged Dataset,False,dataframe,ravenpack_crsp_merged,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/ravenpack_crsp_merged.html

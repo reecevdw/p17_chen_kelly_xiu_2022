@@ -49,7 +49,7 @@ $ __index_level_0__          <i64> 18615
 | How is data pulled?            | Pulled via WRDS using crsp.dsf, msenames, and msedelist tables; filtered to common stocks and Russell 1000 proxy.                                                    |
 | Data available up to (min)     | N/A (large file)                                                             |
 | Data available up to (max)     | N/A (large file)                                                             |
-| Dataframe Path                 | /Users/reecevdw/UChicago/FINM 32900/p17_chen_kelly_xiu_2022/_data/CRSP_DAILY_PAPER_UNIVERSE.parquet                                                   |
+| Dataframe Path                 | /Users/reecevdw/UChicago/FINM 32900/old_project/p17_chen_kelly_xiu_2022/_data/CRSP_DAILY_PAPER_UNIVERSE.parquet                                                   |
 
 
 **Linked Charts:**
@@ -64,11 +64,11 @@ $ __index_level_0__          <i64> 18615
 | Pipeline Name                   | p17_chen_kelly_xiu_2022                       |
 |---------------------------------|--------------------------------------------------------|
 | Pipeline ID                     | [P1](../index.md)              |
-| Lead Pipeline Developer         | Andrew Moukabary             |
+| Lead Pipeline Developer         | Reece VanDeWeghe             |
 | Contributors                    | Andrew Moukabary           |
-| Git Repo URL                    |                         |
-| Pipeline Web Page               | <a href="file:///Users/reecevdw/UChicago/FINM 32900/p17_chen_kelly_xiu_2022/docs/index.html">Pipeline Web Page      |
-| Date of Last Code Update        | 2026-02-09 20:37:24           |
+| Git Repo URL                    | https://github.com/reecevdw/p17_chen_kelly_xiu_2022                        |
+| Pipeline Web Page               | <a href="file:///Users/reecevdw/UChicago/FINM 32900/old_project/p17_chen_kelly_xiu_2022/docs/index.html">Pipeline Web Page      |
+| Date of Last Code Update        | 2026-02-09 21:03:13           |
 | OS Compatibility                |  |
 | Linked Dataframes               |  [P1:crsp_daily](../dataframes/P1/crsp_daily.md)<br>  [P1:ravenpack_djpr](../dataframes/P1/ravenpack_djpr.md)<br>  [P1:ravenpack_crsp_merged](../dataframes/P1/ravenpack_crsp_merged.md)<br>  |
 
