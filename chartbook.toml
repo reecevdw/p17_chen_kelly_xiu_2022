@@ -1,0 +1,98 @@
+[config]
+type = "pipeline"
+chartbook_format_version = "0.0.2"
+
+[site]
+title = "p17_chen_kelly_xiu_2022"
+author = "Andrew Moukabary"
+copyright = "2025"
+logo_path = ""
+favicon_path = ""
+
+[pipeline]
+id = "P1"
+pipeline_name = "p17_chen_kelly_xiu_2022"
+pipeline_description = "A data science project"
+lead_pipeline_developer = "Andrew Moukabary"
+contributors = ["Andrew Moukabary"]
+software_modules_command = "module load anaconda3/3.11.4 TeXLive/2023"
+runs_on_grid_or_windows_or_other = "Windows/Linux/MacOS"
+git_repo_URL = ""
+README_file_path = "./README.md"
+
+[notebooks]
+
+
+
+[dataframes]
+
+[dataframes.crsp_daily]
+dataframe_name = "CRSP Daily Stock Data (Russell 1000 Proxy)"
+data_sources = ["CRSP"]
+data_providers = ["WRDS"]
+how_is_pulled = "Pulled via WRDS using crsp.dsf, msenames, and msedelist tables; filtered to common stocks and Russell 1000 proxy."
+path_to_parquet_data = "_data/CRSP_DAILY_PAPER_UNIVERSE.parquet"
+date_col = "date"
+dataframe_docs_str = """
+Daily CRSP stock data for the paper window (2000-01-01 to 2019-06-30). Includes returns (ret, retx), prices, shares, adjustment factors, and delisting returns.
+A Russell 1000 proxy universe is constructed by ranking daily nominal market capitalization and keeping the top 1000 stocks per day.
+"""
+
+[dataframes.ravenpack_djpr]
+dataframe_name = "RavenPack Dow Jones & PR Equities News"
+data_sources = ["RavenPack"]
+data_providers = ["WRDS"]
+how_is_pulled = "Pulled via WRDS from ravenpack_dj.rpa_djpr_equities_YYYY tables; filtered to US firms, relevance >= 90, single-firm stories."
+path_to_parquet_data = "_data/ravenpack_djpr.parquet"
+date_col = "timestamp_utc"
+dataframe_docs_str = """
+RavenPack Dow Jones & PR Edition equities news (US firms only) for 2000-01-01 to 2019-06-30.
+Filtered to relevance >= 90 and restricted to single-firm stories (one distinct rp_entity_id per provider story).
+Contains event metadata, similarity measures, headline, and composite sentiment score (css).
+"""
+
+[dataframes.ravenpack_crsp_merged]
+dataframe_name = "RavenPack × CRSP Merged Dataset"
+data_sources = ["RavenPack", "CRSP"]
+data_providers = ["WRDS"]
+how_is_pulled = "Linked RavenPack to CRSP using WRDS-recommended CUSIP/NCUSIP method; merged on permno and date."
+path_to_parquet_data = "_data/ravenpack_crsp_merged.parquet"
+date_col = "date"
+dataframe_docs_str = """
+Merged dataset created by:
+1) Building a crosswalk from CRSP permno to RavenPack rp_entity_id using CRSP historical NCUSIP and RavenPack ISIN (CUSIP8 = SUBSTRING(isin,3,8)).
+2) Attaching permno to RavenPack via rp_entity_id (left join).
+3) Merging to CRSP daily on (permno, date) using the RavenPack timestamp_utc normalized to date.
+"""
+
+[charts]
+
+[charts.crsp_market_cap]
+chart_name = "CRSP Average Market Capitalization Over Time"
+short_description_chart = "Daily time series of average market capitalization for Russell 1000 firms."
+dataframe_id = "crsp_daily"
+path_to_html_chart = "_output/crsp_avg_market_cap.html"
+chart_docs_str = """
+Sanity check chart confirming CRSP daily data was pulled correctly.
+Plots the daily cross-sectional mean of nominal market capitalization for the Russell 1000 proxy universe.
+"""
+
+[charts.ravenpack_article_volume]
+chart_name = "RavenPack News Volume Over Time"
+short_description_chart = "Daily count of RavenPack news articles for US single-firm stories."
+dataframe_id = "ravenpack_djpr"
+path_to_html_chart = "_output/ravenpack_daily_volume.html"
+chart_docs_str = """
+Sanity check chart confirming RavenPack DJPR data was pulled correctly.
+Plots the daily count of (US, relevance>=90, single-firm) RavenPack news rows over the sample window.
+"""
+
+[charts.ravenpack_sentiment_distribution]
+chart_name = "RavenPack Event Sentiment Distribution"
+short_description_chart = "Histogram of RavenPack event sentiment scores for matched CRSP firms."
+dataframe_id = "ravenpack_crsp_merged"
+path_to_html_chart = "_output/ravenpack_sentiment_distribution.html"
+chart_docs_str = """
+Sanity check chart confirming the RavenPack × CRSP merge worked.
+Shows the distribution of RavenPack event_sentiment_score after matching to CRSP permno/date.
+"""

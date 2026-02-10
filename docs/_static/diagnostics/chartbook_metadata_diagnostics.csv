@@ -1,0 +1,8 @@
+Name,Metadata Complete,Object Type,Identifier,Pipeline,Missing Fields,Page Link
+p17_chen_kelly_xiu_2022,False,pipeline,P1,P1,"build_commands, os_compatibility, git_repo_URL",../index.html
+CRSP Daily Stock Data (Russell 1000 Proxy),False,dataframe,crsp_daily,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/crsp_daily.html
+RavenPack Dow Jones & PR Equities News,False,dataframe,ravenpack_djpr,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/ravenpack_djpr.html
+RavenPack × CRSP Merged Dataset,False,dataframe,ravenpack_crsp_merged,P1,"short_description_df, links_to_data_providers, topic_tags",../dataframes/P1/ravenpack_crsp_merged.html
+CRSP Average Market Capitalization Over Time,False,chart,crsp_market_cap,P1,"topic_tags, data_frequency, observation_period, lag_in_data_release, data_release_timing, units",../charts/P1.crsp_market_cap.html
+RavenPack News Volume Over Time,False,chart,ravenpack_article_volume,P1,"topic_tags, data_frequency, observation_period, lag_in_data_release, data_release_timing, units",../charts/P1.ravenpack_article_volume.html
+RavenPack Event Sentiment Distribution,False,chart,ravenpack_sentiment_distribution,P1,"topic_tags, data_frequency, observation_period, lag_in_data_release, data_release_timing, units",../charts/P1.ravenpack_sentiment_distribution.html
