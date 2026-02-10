@@ -1,259 +1,105 @@
-from __future__ import annotations
+"""
+Functions to pull RavenPack Dow Jones news data from WRDS for
+recreating Chen, Kelly, and Xiu (2022).
 
-import time
+ - RavenPack DJ Precision Equities: ravenpack_dj.rpa_djpr_equities_YYYY
+ - Tables available from 2000 to 2019
+ - WRDS docs: https://wrds-www.wharton.upenn.edu/pages/get-data/ravenpack/
+
+Filters applied following the paper's methodology:
+ - country_code = 'US'
+ - relevance = 100 (highest relevance to the entity)
+ - Single-stock stories only (1 distinct rp_entity_id per rp_story_id)
+ - Deduplicated to one row per rp_story_id (RavenPack assigns multiple
+   events/topics per story, producing duplicate headline rows)
+
+"""
+
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import pandas as pd
-import pyarrow.parquet as pq
 import wrds
+
 from settings import config
 
 DATA_DIR = Path(config("DATA_DIR"))
 WRDS_USERNAME = config("WRDS_USERNAME")
 
-# Project timeframe
-START_DATE = "2000-01-01"
+# Paper timeframe: RavenPack DJ tables cover 2000-2019
+START_YEAR = 2000
+END_YEAR = 2019
 END_DATE = "2019-06-30"
 
-SCHEMA = "ravenpack_dj"
-TABLE_PREFIX = "rpa_djpr_equities_"
 
-# Where to store intermediate yearly files
-YEAR_DIR = DATA_DIR / "ravenpack_years"
-
-# Quote reserved words for Postgres
-FIELDS: List[str] = [
-    "timestamp_utc",
-    "rp_story_id",
-    "rp_entity_id",
-    "entity_type",
-    "entity_name",
-    "country_code",
-    "relevance",
-    "event_sentiment_score",
-    "event_relevance",
-    "event_similarity_key",
-    "event_similarity_days",
-    "topic",
-    '"group"',  # reserved keyword
-    '"type"',  # reserved keyword
-    "sub_type",
-    "property",
-    "fact_level",
-    "category",
-    "news_type",
-    "rp_source_id",
-    "source_name",
-    "provider_id",
-    "provider_story_id",
-    "headline",
-    "css",
-]
-
-
-def year_range(start_date: str, end_date: str) -> List[int]:
-    return list(range(int(start_date[:4]), int(end_date[:4]) + 1))
-
-
-def year_bounds_for_project(year: int) -> Tuple[str, str]:
+def pull_ravenpack_news(
+    start_year=START_YEAR, end_year=END_YEAR, wrds_username=WRDS_USERNAME
+):
     """
-    Year-specific bounds aligned to the overall project window.
-    - For years strictly inside: Jan 1 to Dec 31
-    - For 2019: Jan 1 to END_DATE (June 30)
+    Pull US single-stock news headlines from RavenPack DJ edition.
+
+    Loops through yearly tables (ravenpack_dj.rpa_djpr_equities_YYYY)
+    using a single WRDS connection. Applies relevance>=90 and US filters
+    in SQL, then single-stock and deduplication filters in pandas.
     """
-    if year == int(END_DATE[:4]):
-        return (f"{year}-01-01", END_DATE)
-    return (f"{year}-01-01", f"{year}-12-31")
+    db = wrds.Connection(wrds_username=wrds_username)
 
+    dfs = []
+    for year in range(start_year, end_year + 1):
+        print(f"Pulling RavenPack data for {year}...")
+        table = f"rpa_djpr_equities_{year}"
 
-def _year_file_path(year: int) -> Path:
-    return YEAR_DIR / f"ravenpack_djpr_{year}.parquet"
-
-
-def pull_ravenpack_single_firm_year(
-    year: int,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    limit: Optional[int] = None,
-    event_only: bool = False,
-) -> pd.DataFrame:
-    """
-    Pull RavenPack DJPR equities for one year, filtered to:
-      - US companies, relevance>=90
-      - single-firm stories (COUNT DISTINCT rp_entity_id == 1 per provider story)
-      - optional event_only: event_sentiment_score IS NOT NULL
-
-    Set limit=None to pull all.
-    """
-    if start_date is None or end_date is None:
-        start_date, end_date = year_bounds_for_project(year)
-
-    table = f"{TABLE_PREFIX}{year}"
-    select_cols = ", ".join([f"t.{c}" for c in FIELDS])
-
-    event_filter_cte = "AND event_sentiment_score IS NOT NULL" if event_only else ""
-    event_filter_outer = "AND t.event_sentiment_score IS NOT NULL" if event_only else ""
-    limit_sql = f"LIMIT {int(limit)}" if limit is not None else ""
-
-    sql = f"""
-    WITH single_firm AS (
+        query = f"""
         SELECT
-            provider_id,
-            provider_story_id
-        FROM {SCHEMA}.{table}
-        WHERE entity_type = 'COMP'
-          AND country_code = 'US'
-          AND relevance >= 90
-          AND timestamp_utc >= '{start_date}'
-          AND timestamp_utc <  '{end_date}'::date + interval '1 day'
-          {event_filter_cte}
-        GROUP BY provider_id, provider_story_id
-        HAVING COUNT(DISTINCT rp_entity_id) = 1
-    )
-    SELECT {select_cols}
-    FROM {SCHEMA}.{table} t
-    JOIN single_firm s
-      ON t.provider_id = s.provider_id
-     AND t.provider_story_id = s.provider_story_id
-    WHERE t.entity_type = 'COMP'
-      AND t.country_code = 'US'
-      AND t.relevance >= 90
-      AND t.timestamp_utc >= '{start_date}'
-      AND t.timestamp_utc <  '{end_date}'::date + interval '1 day'
-      {event_filter_outer}
-    {limit_sql}
-    ;
-    """
+            timestamp_utc,
+            rp_story_id,
+            rp_entity_id,
+            entity_name,
+            headline,
+            news_type,
+            event_sentiment_score
+        FROM ravenpack_dj.{table}
+        WHERE
+            country_code = 'US'
+            AND relevance >= 90
+        """
 
-    db = wrds.Connection(wrds_username=WRDS_USERNAME)
-    try:
-        df = db.raw_sql(sql, date_cols=["timestamp_utc"])
-    finally:
-        db.close()
+        df = db.raw_sql(query, date_cols=["timestamp_utc"])
+        dfs.append(df)
+        print(f"  {year}: {len(df):,} rows")
 
-    # Rename awkward column names (from quoted SQL identifiers)
-    df = df.rename(columns={"group": "rp_group", "type": "rp_type"})
-    return df
+    db.close()
 
+    df_all = pd.concat(dfs, ignore_index=True)
+    print(f"Raw total: {len(df_all):,} rows")
 
-def pull_missing_years_to_parquet(
-    event_only: bool = False,
-    limit: Optional[int] = None,
-    force: bool = False,
-    max_retries: int = 3,
-    retry_sleep_seconds: int = 10,
-) -> List[Path]:
-    """
-    Pull each year into YEAR_DIR, skipping years already present unless force=True.
-    Retries failed years up to max_retries.
-    """
-    YEAR_DIR.mkdir(parents=True, exist_ok=True)
+    # Trim to paper end date (include all of June 30)
+    df_all = df_all[df_all["timestamp_utc"] < pd.Timestamp("2019-07-01")]
+    print(f"After end-date filter ({END_DATE}): {len(df_all):,} rows")
 
-    years = year_range(START_DATE, END_DATE)
-    saved: List[Path] = []
+    # Single-stock filter: keep stories about exactly one entity
+    entity_counts = df_all.groupby("rp_story_id")["rp_entity_id"].nunique()
+    single_stock = entity_counts[entity_counts == 1].index
+    before = len(df_all)
+    df_all = df_all[df_all["rp_story_id"].isin(single_stock)]
+    print(f"Single-stock filter: {before:,} -> {len(df_all):,} rows")
 
-    for y in years:
-        out_y = _year_file_path(y)
+    # Deduplicate: keep one row per story
+    before = len(df_all)
+    df_all = df_all.drop_duplicates(subset=["rp_story_id"])
+    print(f"Deduplicated: {before:,} -> {len(df_all):,} rows")
 
-        if out_y.exists() and not force:
-            print(f"Skipping {y} (already exists): {out_y}")
-            saved.append(out_y)
-            continue
-
-        y_start, y_end = year_bounds_for_project(y)
-
-        attempt = 0
-        while True:
-            attempt += 1
-            try:
-                print(f"Pulling RavenPack {y} ({y_start} to {y_end}) [attempt {attempt}] ...")
-                df_y = pull_ravenpack_single_firm_year(
-                    year=y,
-                    start_date=y_start,
-                    end_date=y_end,
-                    limit=limit,            # None = full year
-                    event_only=event_only,  # False = true superset
-                )
-
-                df_y["year"] = y
-                df_y.to_parquet(out_y, index=False)
-                print(f"  saved {len(df_y):,} rows -> {out_y}")
-                saved.append(out_y)
-                break
-
-            except Exception as e:
-                print(f"  ERROR pulling {y}: {e}")
-                if attempt >= max_retries:
-                    raise
-                print(f"  retrying in {retry_sleep_seconds}s ...")
-                time.sleep(retry_sleep_seconds)
-
-    return saved
+    return df_all
 
 
-def combine_year_parquets_to_single(
-    out_path: Path | None = None,
-    year_files: Optional[List[Path]] = None,
-) -> Path:
-    """
-    Combine yearly parquet files into ONE parquet file efficiently using pyarrow ParquetWriter.
-    This avoids loading everything into memory.
-    """
-    if out_path is None:
-        out_path = DATA_DIR / "ravenpack_djpr.parquet"
-
-    if year_files is None:
-        year_files = sorted(YEAR_DIR.glob("ravenpack_djpr_*.parquet"))
-
-    if not year_files:
-        raise FileNotFoundError(f"No yearly parquet files found in {YEAR_DIR}")
-
-    writer: pq.ParquetWriter | None = None
-    try:
-        for p in year_files:
-            table = pq.read_table(p)
-            if writer is None:
-                writer = pq.ParquetWriter(out_path, table.schema, compression="snappy")
-            writer.write_table(table)
-            print(f"Appended {p.name} ({table.num_rows:,} rows)")
-    finally:
-        if writer is not None:
-            writer.close()
-
-    print(f"Wrote combined parquet -> {out_path}")
-    return out_path
-
-
-def save_ravenpack_parquet(
-    out_path: Path | None = None,
-    event_only: bool = False,
-    limit: Optional[int] = None,
-    force: bool = False,
-    max_retries: int = 3,
-    retry_sleep_seconds: int = 10,
-) -> Path:
-    """
-    Your requested workflow:
-      1) Pull missing years into _data/ravenpack_years/
-      2) Combine those into ONE parquet file at _data/ravenpack_djpr.parquet
-    """
-    year_files = pull_missing_years_to_parquet(
-        event_only=event_only,
-        limit=limit,
-        force=force,
-        max_retries=max_retries,
-        retry_sleep_seconds=retry_sleep_seconds,
-    )
-    return combine_year_parquets_to_single(out_path=out_path, year_files=year_files)
+def load_ravenpack_news(data_dir=DATA_DIR):
+    """Load saved RavenPack news data from parquet file."""
+    path = Path(data_dir) / "RAVENPACK_NEWS.parquet"
+    return pd.read_parquet(path)
 
 
 if __name__ == "__main__":
-    save_ravenpack_parquet(
-        out_path=DATA_DIR / "ravenpack_djpr.parquet",
-        event_only=False,  # superset
-        limit=None,        # set to e.g. 10000 for a test run
-        force=False,       # only pull missing years
-        max_retries=3,
-        retry_sleep_seconds=10,
-    )
+    df = pull_ravenpack_news()
+
+    path = DATA_DIR / "RAVENPACK_NEWS.parquet"
+    df.to_parquet(path, index=False)
+    print(f"Saved {len(df):,} rows to {path}")

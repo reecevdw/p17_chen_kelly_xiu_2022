@@ -65,11 +65,11 @@ def attach_permno_to_ravenpack(
     Left-join permno onto RavenPack news using rp_entity_id.
     """
     if ravenpack_path is None:
-        ravenpack_path = DATA_DIR / "ravenpack_djpr.parquet"
+        ravenpack_path = DATA_DIR / "RAVENPACK_NEWS.parquet"
     if crosswalk_path is None:
         crosswalk_path = DATA_DIR / "raven_crsp_crosswalk.parquet"
     if out_path is None:
-        out_path = DATA_DIR / "ravenpack_djpr_with_permno.parquet"
+        out_path = DATA_DIR / "RAVENPACK_NEWS_WITH_PERMNO.parquet"
 
     rp = pd.read_parquet(ravenpack_path)
     xw = pd.read_parquet(crosswalk_path)
@@ -102,11 +102,11 @@ def merge_ravenpack_with_crsp_daily(
     how="inner" keeps only rows that match CRSP daily (stricter).
     """
     if ravenpack_with_permno_path is None:
-        ravenpack_with_permno_path = DATA_DIR / "ravenpack_djpr_with_permno.parquet"
+        ravenpack_with_permno_path = DATA_DIR / "RAVENPACK_NEWS_WITH_PERMNO.parquet"
     if crsp_daily_path is None:
         crsp_daily_path = DATA_DIR / "CRSP_DAILY_PAPER_UNIVERSE.parquet"
     if out_path is None:
-        out_path = DATA_DIR / "ravenpack_crsp_merged.parquet"
+        out_path = DATA_DIR / "RAVENPACK_CRSP_MERGED.parquet"
 
     if how not in {"left", "inner"}:
         raise ValueError("how must be 'left' or 'inner'")

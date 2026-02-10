@@ -158,14 +158,14 @@ def task_pull():
     }
 
     yield {
-        "name": "ravenpack_djpr",
-        "doc": "Pull RavenPack DJPR equities (US, relevance>=90, single-firm stories) from WRDS and save as one parquet superset",
+        "name": "ravenpack_news",
+        "doc": "Pull RavenPack DJ headlines (US, relevance=100, single-stock, deduplicated) from WRDS",
         "actions": [
             "ipython ./src/settings.py",
             "ipython ./src/pull_ravenpack.py",
         ],
         "targets": [
-            DATA_DIR / "ravenpack_djpr.parquet",
+            DATA_DIR / "RAVENPACK_NEWS.parquet",
         ],
         "file_dep": ["./src/settings.py", "./src/pull_ravenpack.py"],
         "clean": [],
@@ -180,18 +180,18 @@ def task_pull():
         ],
         "targets": [
             DATA_DIR / "raven_crsp_crosswalk.parquet",
-            DATA_DIR / "ravenpack_djpr_with_permno.parquet",
-            DATA_DIR / "ravenpack_crsp_merged.parquet",
+            DATA_DIR / "RAVENPACK_NEWS_WITH_PERMNO.parquet",
+            DATA_DIR / "RAVENPACK_CRSP_MERGED.parquet",
         ],
         "file_dep": [
             "./src/settings.py",
             "./src/link_ravenpack_crsp.py",
-            DATA_DIR / "ravenpack_djpr.parquet",
+            DATA_DIR / "RAVENPACK_NEWS.parquet",
             DATA_DIR / "CRSP_DAILY_PAPER_UNIVERSE.parquet",
         ],
         "task_dep": [
             "pull:crsp_stock",
-            "pull:ravenpack_djpr",
+            "pull:ravenpack_news",
         ],
         "clean": [],
     }
@@ -212,12 +212,12 @@ def task_pull():
             "./src/settings.py",
             "./src/generate_charts.py",
             DATA_DIR / "CRSP_DAILY_PAPER_UNIVERSE.parquet",
-            DATA_DIR / "ravenpack_djpr.parquet",
-            DATA_DIR / "ravenpack_crsp_merged.parquet",
+            DATA_DIR / "RAVENPACK_NEWS.parquet",
+            DATA_DIR / "RAVENPACK_CRSP_MERGED.parquet",
         ],
         "task_dep": [
             "pull:crsp_stock",
-            "pull:ravenpack_djpr",
+            "pull:ravenpack_news",
             "pull:link_ravenpack_crsp",
         ],
         "clean": [],

@@ -47,7 +47,7 @@ def chart_crsp_market_cap():
 # RavenPack: Daily article counts
 # ------------------------------------------------------------
 def chart_ravenpack_volume():
-    path = DATA_DIR / "ravenpack_djpr.parquet"
+    path = DATA_DIR / "RAVENPACK_NEWS.parquet"
     df = pd.read_parquet(path, columns=["timestamp_utc"])
 
     df["date"] = pd.to_datetime(df["timestamp_utc"]).dt.normalize()
@@ -61,7 +61,7 @@ def chart_ravenpack_volume():
         daily,
         x="date",
         y="article_count",
-        title="RavenPack: Daily Article Volume (US, Single-Firm)",
+        title="RavenPack: Daily Article Volume (US, Single-Stock)",
     )
 
     out = OUTPUT_DIR / "ravenpack_daily_volume.html"
@@ -73,7 +73,7 @@ def chart_ravenpack_volume():
 # RavenPack x CRSP: Event sentiment distribution
 # ------------------------------------------------------------
 def chart_sentiment_distribution():
-    path = DATA_DIR / "ravenpack_crsp_merged.parquet"
+    path = DATA_DIR / "RAVENPACK_CRSP_MERGED.parquet"
     df = pd.read_parquet(path, columns=["event_sentiment_score"])
 
     df = df[df["event_sentiment_score"].notna()]
